@@ -58,6 +58,8 @@ for (i in 1:length(bina_links)) {
 
 bina_links = bina_links[!is.na(bina_links)]
 
+length(bina_links)
+
 #txt %>% str_extract("Elanın nömrəsi: [0-9]+")
 #txt %>% str_extract("Baxışların sayı: [0-9]+")
 #txt %>% str_extract("Yeniləndi: ([0-9]+ [aA-zZ]+ [0-9]+)") #%>% str_extract('[0-9]+ [aA-zZ]+ [0-9]+')
@@ -66,7 +68,8 @@ rm(i,txt,bina_links_)
 
 
 # Links
-concat2 = as.data.frame(bina_links) %>% rename(links = bina_links)
+concat2 = as.data.frame(bina_links) 
+colnames(concat2) = 'links'
 
 n <- 100
 nr <- nrow(concat2)
