@@ -1,0 +1,51 @@
+on: push
+
+name: R-CMD
+
+jobs:
+  R-CMD:
+    if: (github.actor == 'henry090')
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} 
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - { os: macOS-latest }
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: r-lib/actions/setup-r@master
+
+      - uses: r-lib/actions/setup-pandoc@master
+
+      - name: Install dependencies
+        run: |
+          Rscript -e "install.packages(c('dplyr','rmarkdown','rvest', 'plyr',
+          'stringr', 'lubridate', 'glue','doParallel','data.table'))"
+          
+      - name: Run files 
+        run: |
+          Rscript records.R
+
+      - name: Commit files  
+        run: |
+          git config --local user.name  ${{ github.actor }}
+          git add .
+          git commit -m "updated site"
+          
+      - name: Push changes  
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}          
+          
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          
+

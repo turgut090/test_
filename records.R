@@ -7,8 +7,11 @@ library(rvest)
 library(stringr)
 library(lubridate)
 library(glue)
+library(plyr)
+library(doParallel)
+library(data.table)
 
-result11 <- data.frame(matrix(NA, nrow = 5, ncol = 1))
+result11 <- data.frame(matrix(NA, nrow = 25, ncol = 1))
 
 # get pages
 colnames(result11) <- c("reference")
@@ -58,7 +61,73 @@ bina_links = bina_links[!is.na(bina_links)]
 #txt %>% str_extract("Elanın nömrəsi: [0-9]+")
 #txt %>% str_extract("Baxışların sayı: [0-9]+")
 #txt %>% str_extract("Yeniləndi: ([0-9]+ [aA-zZ]+ [0-9]+)") #%>% str_extract('[0-9]+ [aA-zZ]+ [0-9]+')
+rm(i,txt,bina_links_)
 
+
+
+# Links
+concat2 = as.data.frame(bina_links) %>% rename(links = bina_links)
+
+n <- 100
+nr <- nrow(concat2)
+smp = split(concat2, rep(1:ceiling(nr/n), each=n, length.out=nr))
+list2 = list()
+
+for (i in 1:length(smp)) {
+  new = mclapply(1:nrow(smp[[i]]), function(k) {
+    html_page = read_html(smp[[i]]$links[k])
+    res = html_page %>% 
+      html_nodes("td") %>%
+      html_text() %>% .[seq(2,12,2)] %>% .[1:5] %>% append(.,
+                                                           html_page %>% 
+                                                             html_nodes(".azn") %>%
+                                                             html_text()) %>% 
+      # ownership
+      append(.,html_page %>% 
+               html_nodes(".ownership") %>%
+               html_text() ) %>% 
+      # description
+      append(.,html_page %>% 
+               html_nodes("article") %>%
+               html_text() ) %>% 
+      
+      #views
+      append(.,html_page %>% 
+               html_nodes(".item_info") %>%
+               html_text() %>% gsub(.,replacement = ' ',pattern = '\\D+') %>% str_squish() %>% 
+               str_split(.,' ') %>% unlist() %>% .[2] )%>% 
+      #locations
+      append(.,html_page %>% 
+               html_nodes(".locations") %>%
+               html_text() %>% str_split(.,'   ',simplify = T))
+    return(res)
+  },mc.cores = 20)
+  list2[[i]]<-new
+  print(i)
+}
+
+
+new_df2 <-rbind.fill(lapply(do.call(rbind,list2[1:9]),function(y){as.data.frame(t(y),stringsAsFactors=FALSE)})) %>% 
+  distinct() %>% mutate(id = str_extract(concat2$links,pattern = '[0-9]+'),
+                        date = Sys.Date()) %>% 
+  select(id,date,everything())
+
+####################################################################################################################
+
+if(!file.exists('houses.csv')) {
+  fwrite(new_df2,'houses.csv')
+} else {
+  dataset = fread('houses.csv')
+  total = bind_rows(dataset,new_df2)
+  fwrite(total,'houses.csv')
+}
+
+
+if(!dir.exists('imgs')) {
+  dir.create('imgs')
+}
+
+setwd('imgs')
 img_add_gather = list()
 
 for (i in 1:length(bina_links)) {
@@ -67,16 +136,18 @@ for (i in 1:length(bina_links)) {
   idx = sample(1:length(imgs), floor(length(imgs)*0.6), replace=TRUE)
   dir_name = paste('id_',str_extract(bina_links[i],'[0-9]+'),sep = '')
   dir.create(dir_name)
-  setwd(dir_name)
   for(j in idx) {
-    download.file(imgs[j],destfile = paste('id_',str_extract(bina_links[i],'[0-9]+'),
-                                                '_',
-                                                sample.int(1e6,1),sample.int(1e6,1),sample.int(1e6,1),
-                                                '_img.jpg',sep=''))
+    download.file(imgs[j],destfile = file.path(
+      dir_name,
+      basename( paste('id_',str_extract(bina_links[i],'[0-9]+'),
+                      '_',
+                      sample.int(1e6,1),sample.int(1e6,1),sample.int(1e6,1),
+                      '_img.jpg',sep='')
+      )
+    ))
   }
   print(paste('Done',i,'out of', length(bina_links)))
 }
-
 
 
 
