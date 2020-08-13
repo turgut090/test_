@@ -121,7 +121,7 @@ if(!file.exists('houses.csv')) {
   fwrite(new_df2,'houses.csv')
 } else {
   dataset = fread('houses.csv')
-  total = bind_rows(dataset,new_df2)
+  total = rbind.fill(dataset,new_df2)
   fwrite(total,'houses.csv')
 }
 
