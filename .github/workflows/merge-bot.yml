@@ -27,5 +27,5 @@ jobs:
         reviewers: false
         labels: ready, merge
         blocking_labels: do not merge
-        checks_enabled: true
+        checks_enabled: false
         method: squash
