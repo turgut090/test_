@@ -47,6 +47,14 @@ total$link[!str_detect(total$link,pattern = 'yasayis')] %>% as.data.frame() %>%
 
 bina_links = total$links
 
+checking = paste("imgs/id_",str_extract(bina_links,'[0-9]+'),sep = '')
+
+drs = list.dirs('imgs')
+
+rmm = drs[drs %in% checking] %>% str_extract(.,'[0-9]+') %>% paste("https://bina.az/items/",.,sep = '')
+
+bina_links = bina_links[!bina_links %in% rmm]
+
 rm(big_data13,datalist11,df,i,page,q,result11,total,url)
 
 for (i in 1:length(bina_links)) {
