@@ -124,15 +124,28 @@ new_df2 <-rbind.fill(lapply(do.call(rbind,list2[1:9]),function(y){as.data.frame(
   select(id,date,everything())
 
 ####################################################################################################################
+ress = list.files(pattern = 'houses',full.names = T)
+ress2 = list.files(pattern = 'houses',full.names = F)
+
+ress = lapply(1:length(ress), function(x) file.info(ress[1])) %>% 
+  do.call(rbind,.) %>% as.data.frame() %>% 
+  mutate(smn = ress2) %>% 
+  mutate(ctime=ymd_hms(ctime)) %>% filter(ctime==max(ctime)) %>% .[1,]
 
 if(!file.exists('houses.csv')) {
   fwrite(new_df2,'houses.csv')
-} else {
-  dataset = fread('houses.csv')
+} else if (file.exists('houses.csv') & file.info(rownames(ress))$size/1e6 >= 60) {
+  #dataset = fread('houses.csv')
+  #total = rbind.fill(dataset,new_df2)
+  nm = paste(round(runif(2),4), sep = '_',collapse = '_')
+  fwrite(new_df2,paste('houses_',nm,'.csv',sep = ''))
+} else if (file.exists('houses.csv') & file.info(rownames(ress))$size/1e6 < 60){
+  dataset = fread(ress$smn)
   total = rbind.fill(dataset,new_df2)
-  fwrite(total,'houses.csv')
+  fwrite(total, file=ress$smn)
+} else {
+  stop('Something is wrong',call. = FALSE)
 }
-
 
 if(!dir.exists('imgs')) {
   dir.create('imgs')
