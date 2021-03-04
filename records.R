@@ -11,7 +11,7 @@ library(plyr)
 library(doParallel)
 library(data.table)
 
-result11 <- data.frame(matrix(NA, nrow = 10, ncol = 1))
+result11 <- data.frame(matrix(NA, nrow = 7, ncol = 1))
 
 # get pages
 colnames(result11) <- c("reference")
