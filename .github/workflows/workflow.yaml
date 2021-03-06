@@ -39,7 +39,7 @@ jobs:
         run: |
           git config --local user.name  ${{ github.actor }}
           git add .
-          git commit -m "updated site"
+          git commit -m "updated site" 
           
       - name: Push changes  
         uses: ad-m/github-push-action@master
